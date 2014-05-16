@@ -3,7 +3,7 @@ githooks
 
 post-merge_checkinstall
 -----------------------
-Installation via checkinstall (http://checkinstall.izto.org/)
+Installation via checkinstall (http://checkinstall.izto.org/).
 To use the scripts provided here in the githooks/postmerge it makes the most sense to work with symbolic links.
 
 e.g.
