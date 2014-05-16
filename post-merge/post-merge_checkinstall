@@ -21,19 +21,19 @@ checkinstallParam=""
 if [ -f ".git/hooks/postmergerc" ]
 then
   echo -e "${yellow}.git/hooks/postmergerc${NC} gefunden"
-
+  
   autogenParam=$(jq '.autogen' .git/hooks/postmergerc | tr -d "\"")
   if [ "$autogenParam" != "" ]; then echo -e "Zusätzliche Parameter autogen"; echo -e "\t$autogenParam"; fi
 
   configureParam=$(jq '.configure' .git/hooks/postmergerc | tr -d "\"")
   if [ "$configureParam" != "" ]; then echo -e "Zusätzliche Parameter configure"; echo -e "\t$configureParam"; fi
-
+  
   makeParam=$(jq '.make' .git/hooks/postmergerc | tr -d "\"")
   if [ "$makeParam" != "" ]; then echo -e "Zusätzliche Parameter make"; echo -e "\t$makeParam"; fi
 
   checkinstallParam=$(jq '.checkinstall' .git/hooks/postmergerc | tr -d "\"")
   if [ "$checkinstallParam" != "" ]; then echo -e "Zusätzliche Parameter checkinstall"; echo -e "\t$checkinstallParam"; fi
-
+  
 fi
 
 # GIT
@@ -215,46 +215,14 @@ fi
 
 if [ -f "setup.py" ]
 then
-  
   # --spec foo -> forget the ugly spec file
-  
-  exec < /dev/tty
-  while true; do
-    read -n 1 -p "Installationsmethode für \"$name\" wählen (1 - python setup.py install, 2 - pip install): " yn
-    echo;
-    case $yn in
-      [1]* ) echo -e "Installiere mit ${green}checkinstall ... python setup.py install${NC}"
-        sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $checkinstallParam python setup.py install
-      break;;
-      [2]* ) echo -e "Installiere mit ${green}checkinstall ... pip install${NC}"
-        if [ -d "/tmp/pip_build_$USER/" ]
-        then
-          echo -e "Lösche ${yellow}/tmp/pip_build_$USER/${NC}"
-          sudo rm -rf "/tmp/pip_build_$USER/"
-        fi
-        
-        if [ -d "/tmp/pip_build_root/" ]
-        then
-          echo -e "Lösche ${yellow}/tmp/pip_build_root/${NC}"
-          sudo rm -rf "/tmp/pip_build_root/"
-        fi
-        sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $checkinstallParam pip install
-      break;;
-      * ) echo "Bitte mit 1 oder 2 antworten.";;
-    esac
-  done
+  echo -e "Installiere mit ${green}checkinstall ... python setup.py install${NC}"
+  sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $checkinstallParam python setup.py install
 else
-  
   # --spec foo -> forget the ugly spec file
-  
   echo -e "Installiere mit ${green}checkinstall ...${NC}"
   sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\"
 fi
 
 exit 0
-
-
-
-
-
 
