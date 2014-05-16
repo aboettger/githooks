@@ -109,7 +109,7 @@ fi
 if [ -f "Makefile" ]
 then
   echo -e "Starte ${green}make${NC}"
-  make
+  make $makeParam
   OUT=$?
   if [ $OUT -ne 0 ];then
     echo -e "${red}Es trat ein Fehler auf. Bitte vorhergehende Ausgaben überprüfen. Breche ab.${NC}"
@@ -224,7 +224,7 @@ then
     echo;
     case $yn in
       [1]* ) echo -e "Installiere mit ${green}checkinstall ... python setup.py install${NC}"
-        sudo checkinstall $checkinstallParam --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" python setup.py install
+        sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $checkinstallParam python setup.py install
       break;;
       [2]* ) echo -e "Installiere mit ${green}checkinstall ... pip install${NC}"
         if [ -d "/tmp/pip_build_$USER/" ]
@@ -238,7 +238,7 @@ then
           echo -e "Lösche ${yellow}/tmp/pip_build_root/${NC}"
           sudo rm -rf "/tmp/pip_build_root/"
         fi
-        sudo checkinstall $checkinstallParam --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" pip install
+        sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $checkinstallParam pip install
       break;;
       * ) echo "Bitte mit 1 oder 2 antworten.";;
     esac
