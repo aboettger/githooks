@@ -23,16 +23,16 @@ then
   echo -e "${yellow}.git/hooks/postmergerc${NC} gefunden"
   
   autogenParam=$(jq '.autogen' .git/hooks/postmergerc | tr -d "\"")
-  if [ "$autogenParam" != "" ]; then echo -e "Zusätzliche Parameter autogen"; echo -e "\t$autogenParam"; fi
+  if [ "$autogenParam" != "" ]; then echo -e "Zusätzliche Parameter autogen"; echo -e "\t${green}$autogenParam${NC}"; fi
 
   configureParam=$(jq '.configure' .git/hooks/postmergerc | tr -d "\"")
-  if [ "$configureParam" != "" ]; then echo -e "Zusätzliche Parameter configure"; echo -e "\t$configureParam"; fi
+  if [ "$configureParam" != "" ]; then echo -e "Zusätzliche Parameter configure"; echo -e "\t${green}$configureParam${NC}"; fi
   
   makeParam=$(jq '.make' .git/hooks/postmergerc | tr -d "\"")
-  if [ "$makeParam" != "" ]; then echo -e "Zusätzliche Parameter make"; echo -e "\t$makeParam"; fi
+  if [ "$makeParam" != "" ]; then echo -e "Zusätzliche Parameter make"; echo -e "\t${green}$makeParam${NC}"; fi
 
   checkinstallParam=$(jq '.checkinstall' .git/hooks/postmergerc | tr -d "\"")
-  if [ "$checkinstallParam" != "" ]; then echo -e "Zusätzliche Parameter checkinstall"; echo -e "\t$checkinstallParam"; fi
+  if [ "$checkinstallParam" != "" ]; then echo -e "Zusätzliche Parameter checkinstall"; echo -e "\t${green}$checkinstallParam${NC}"; fi
   
 fi
 
@@ -49,7 +49,7 @@ isGitHub=$(echo "$responseGitHub" | jq '.errors <= 0')
 
 if [ "$isGitHub" == "true" ]
 then
-  echo -e "${green}Gehostet auf GitHub, API kann verwendet werden.)${NC}"
+  echo -e "${green}Gehostet auf GitHub, API kann verwendet werden.${NC}"
 fi
 
 if [ "$(command -v easy_install)" != "" ]
