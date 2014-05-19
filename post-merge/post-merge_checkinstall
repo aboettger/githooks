@@ -102,6 +102,40 @@ function cleanup {
   exit 1
 }
 
+function writeDescriptionPak {
+  if [ "$1" != "" ]
+    then echo "$1" > description-pak
+  fi
+}
+
+function logArchitecture {
+  echog "\tArchitecture: ${green}$1${TOA}"
+}
+
+function logRequires {
+  echog "\tRequires: ${green}$1${TOA}"
+}
+
+function logMaintainer {
+  echog "\tMaintainer: ${green}$1${TOA}"
+}
+
+function logGroup {
+  echog "\tGroup: ${green}$1${TOA}"
+}
+
+function logSummary {
+  echog "\tSummary: ${green}$1${TOA}"
+}
+
+function logVersion {
+  echog "\tVersion: ${green}$1${TOA}"
+}
+
+function logLicense {
+  echog "\tLicense: ${green}$1${TOA}"
+}
+
 if [ "$(command -v checkinstall)" == "" ]
 then
   logError "Checkinstall not installed. Aborting."
@@ -135,17 +169,11 @@ source=$(git config --get remote.origin.url)
 #name=$(echo $source | gawk -F "/" '{print $5}' | sed -e 's/\.git$//')
 #name=$(git remote -v | head -n1 | awk '{print $2}' | sed -e 's,.*:\(.*/\)\?,,' -e 's/\.git$//')
 name=$(basename $(git config --get remote.$(git config --get branch.master.remote).url) .git)
-gitowner=$(echo $source | gawk -F "/" '{ print ( $(NF-1) ) }' | gawk -F ":" '{ print ( $(NF) ) }')
+gitowner=$(echo "$source" | gawk -F "/" '{ print ( $(NF-1) ) }' | gawk -F ":" '{ print ( $(NF) ) }')
 release=$(($(git rev-list HEAD --count) - 1))
 
 responseGitHub=$(curl -s "https://api.github.com/search/repositories?q=+repo:$gitowner/$name")
 isGitHub=$(echo "$responseGitHub" | jq '.errors <= 0')
-
-if [ "$isGitHub" == "true" ]
-then
-  logInfo "Hosted on GitHub. GitHub-API can be used."
-  echo
-fi
 
 if [ "$(command -v easy_install)" != "" ]
 then
@@ -200,9 +228,6 @@ then
   okfail; [ $? -gt 0 ] && exit 1
 fi
 
-
-
-
 version=""
 maintainer=""
 license=""
@@ -217,45 +242,122 @@ then
   sourceHtmlUrl=$(echo "$responseGitHub" | jq '.items[].html_url')
 fi
 
+####################
+# DEBIAN/CHANGELOG
+####################
 if [ -f "debian/changelog" ]
 then
   echog "Search for information via ${bold}debian/changelog${TOA}"
-  if [ "$version" == "" ]; then version=$(head -1 "debian/changelog" | gawk -F " " '{print $2}' |  tr -d "()"); fi
+
+  versionDebianChangelog=$(head -1 "debian/changelog" | gawk -F " " '{print $2}' |  tr -d "()")
+  logVersion "$versionDebianChangelog"
+  if [ "$version" == "" ]; then version=$versionDebianChangelog; fi
 fi
 
+####################
+# DEBIAN/CONTROL
+####################
 if [ -f "debian/control" ]
 then
   echog "Search for information via ${bold}debian/control${TOA}"
-  if [ "$architecture" == "" ]; then architecture=$(grep '^ *Architecture *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " "); fi
-  if [ "$requires" == "" ]; then requires=$(grep '^ *Depends *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " "); fi
-  if [ "$maintainer" == "" ]; then maintainer=$(grep '^ *Maintainer *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//'); fi
-  if [ "$group" == "" ]; then group=$(grep '^ *Section *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//'); fi
-  if [ "$summary" == "" ]; then summary=$(grep '^ *Description *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//'); echo "$summary" > description-pak; fi
+
+  architectureDebianControl=$(grep '^ *Architecture *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " ")
+  logArchitecture "$architectureDebianControl"
+  if [ "$architecture" == "" ]; then architecture=$architectureDebianControl; fi
+
+  requiresDebianControl=$(grep '^ *Depends *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " ")
+  logRequires "$requiresDebianControl"
+  if [ "$requires" == "" ]; then requires=$requiresDebianControl; fi
+
+  maintainerDebianControl=$(grep '^ *Maintainer *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
+  logMaintainer "$maintainerDebianControl"
+  if [ "$maintainer" == "" ]; then maintainer=$maintainerDebianControl; fi
+
+  groupDebianControl=$(grep '^ *Section *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
+  logGroup "$groupDebianControl"
+  if [ "$group" == "" ]; then group=$groupDebianControl; fi
+
+  summaryDebianControl=$(grep '^ *Description *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
+  logSummary "$summaryDebianControl"
+  if [ "$summary" == "" ]
+  then
+    summary=$summaryDebianControl
+    writeDescriptionPak "$summaryDebianControl"
+  fi
 fi
 
+####################
+# MAKEFILE
+####################
 if [ -f "Makefile" ]
 then
   echog "Search for information via ${bold}Makefile${TOA}"
-  if [ "$version" == "" ]; then version=$(grep '^ *PACKAGE_VERSION *= *' Makefile | gawk -F "=" '{print $2}' |  tr -d " "); fi
-  if [ "$version" != "" ]; then echog "\tVersion: ${green}$version${TOA}"; fi
+
+  versionMakefile=$(grep '^ *PACKAGE_VERSION *= *' Makefile | gawk -F "=" '{print $2}' |  tr -d " ")
+  logVersion "$versionMakefile"
+  if [ "$version" == "" ]; then version=$versionMakefile; fi
 fi
 
+####################
+# *.DOAP
+####################
+if [ -f "$name.doap" ]
+then
+  echog "Search for information via ${bold}$name.doap${TOA}"
+  
+  lengthMaintainerDoap=$(xpath -q -e "count(//maintainer)" "$name.doap" 2>/dev/null)
+  for ((i = 1; i <= $lengthMaintainerDoap; i++)); do
+    if [ "$maintainerDoap" == "" ]
+    then
+      maintainerDoap="$(xpath -q -e "//maintainer[$i]/foaf:Person/foaf:name/text()" "$name.doap")"
+    else
+      maintainerDoap="$maintainerDoap, $(xpath -q -e "//maintainer[$i]/foaf:Person/foaf:name/text()" "$name.doap")"
+    fi
+    maintainerDoap="$maintainerDoap ($(xpath -q -e "string(//maintainer[$i]/foaf:Person/foaf:mbox/@rdf:resource)" "$name.doap" 2>/dev/null | sed 's/^.*mailto:\(.*\)$/\1/'))"
+  done
+  logMaintainer "$maintainerDoap"
+  if [ "$maintainer" == "" ]; then maintainer=$maintainerDoap; fi
+  
+  summaryDoap=$(xpath -q -e "*/shortdesc/text()" "$name.doap" | tr -d '\n')
+  logSummary "$summaryDoap"
+  if [ "$summary" == "" ]
+  then
+    summary=$summaryDoap
+    writeDescriptionPak "$summaryDoap"
+  fi
+fi
+
+####################
+# *.SPEC
+####################
 if [ -f "$name.spec" ]
 then
   echog "Search for information via ${bold}$name.spec${TOA}"
-  if [ "$license" == "" ]; then license=$(grep '^ *License *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " "); fi
-  if [ "$license" != "" ]; then echog "\tLicense: ${green}$license${TOA}"; fi
+
+  licenseSpec=$(grep '^ *License *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " ")
+  logLicense "$licenseSpec"
+  if [ "$license" == "" ]; then license=$licenseSpec; fi
   
-  if [ "$group" == "" ]; then group=$(grep '^ *Group *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " "); fi
-  if [ "$group" != "" ]; then echog "\tGroup: ${green}$group${TOA}"; fi
-  
-  if [ "$summary" == "" ]; then summary=$(grep '^ *Summary *' "$name.spec" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//'); echo "$summary" > description-pak; fi
-  if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${TOA}"; fi
-  
-  if [ "$requires" == "" ]; then requires=$(grep '^ *Requires *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " " | tr '\n' ',' | sed -e 's/^,*//' -e 's/,*$//'); fi
-  if [ "$requires" != "" ]; then echog "\tRequires: ${green}$requires${TOA}"; fi
+  groupSpec=$(grep '^ *Group *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " ")
+  logGroup "$groupSpec"
+  if [ "$group" == "" ]; then group=$groupSpec; fi
+
+  summarySpec=$(grep '^ *Summary *' "$name.spec" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
+  logSummary "$summarySpec"
+  if [ "$summary" == "" ]
+  then
+    summary=$summarySpec
+    writeDescriptionPak "$summarySpec"
+  fi
+
+  requiresSpec=$(grep '^ *Requires *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " " | tr '\n' ',' | sed -e 's/^,*//' -e 's/,*$//')
+  logRequires "$requiresSpec"
+  if [ "$requires" == "" ]; then requires=$requiresSpec; fi
 fi
 
+####################
+# SETUP.PY
+####################
 if [ -f "setup.py" ]
 then
   if [ ! -x "setup.py" ]
@@ -264,31 +366,47 @@ then
     exit 1
   else
     echog "Search for information via ${bold}setup.py${TOA}"
-    if [ "$maintainer" == "" ]; then maintainer=$(./setup.py --author); fi
-    if [ "$maintainer" != "" ]; then echog "\tMaintainer: ${green}$maintainer${TOA}"; fi
-    
-    if [ "$maintainermail" == "" ]; then maintainermail=$(./setup.py --author-email); fi
-    if [ "$maintainermail" != "" ]; then echog "\tMaintainer eMail: ${green}$maintainermail${TOA}"; fi
-    
-    if [ "$version" == "" ]; then version=$(./setup.py --version); fi
-    if [ "$version" != "" ]; then echog "\tVersion: ${green}$version${TOA}"; fi
-    
-    if [ "$license" == "" ]; then license=$(./setup.py --license); fi
-    if [ "$license" != "" ]; then echog "\tLicense: ${green}$license${TOA}"; fi
-    
-    if [ "$requires" == "" ]; then requires=$(./setup.py --requires); fi
-    if [ "$requires" != "" ]; then echog "\tRequires: ${green}$requires${TOA}"; fi
-    
-    if [ "$summary" == "" ]; then summary=$(./setup.py --description); echo "$summary" > description-pak; fi
-    if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${TOA}"; fi
+
+    maintainerSetupPy="$(./setup.py --author) ($(./setup.py --author-email))"
+    logMaintainer "$maintainerSetupPy"
+    if [ "$maintainer" == "" ]; then maintainer=$maintainerSetupPy; fi
+
+    versionSetupPy=$(./setup.py --version)
+    logVersion "$versionSetupPy"
+    if [ "$version" == "" ]; then version=$versionSetupPy; fi
+
+    licenseSetupPy=$(./setup.py --license)
+    logLicense "$licenseSetupPy"
+    if [ "$license" == "" ]; then license=$licenseSetupPy; fi
+
+    requiresSetupPy=$(./setup.py --requires)
+    logRequires "$requiresSetupPy"
+    if [ "$requires" == "" ]; then requires=$requiresSetupPy; fi
+
+    summarySetupPy=$(./setup.py --description)
+    logSummary "$summarySetupPy"
+    if [ "$summary" == "" ]
+    then
+      summary=$summarySetupPy
+      writeDescriptionPak "$summarySetupPy"
+    fi
   fi
 fi
 
+####################
+# GITHUB API
+####################
 if [ "$isGitHub" == "true" ]
 then
   echog "Search for information via ${bold}GitHub-API${TOA}"
-  if [ "$summary" == "" ]; then summary=$(echo "$responseGitHub" | jq '.items[].description' | sed -e 's/^"*//' -e 's/"*$//'); echo "$summary" > description-pak; fi
-  if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${TOA}"; fi
+
+  summaryGitHubApi=$(echo "$responseGitHub" | jq '.items[].description' | sed -e 's/^"*//' -e 's/"*$//')
+  logSummary "$summaryGitHubApi"
+  if [ "$summary" == "" ]
+  then
+    summary=$summaryGitHubApi
+    writeDescriptionPak "$summaryGitHubApi"
+  fi
 fi
 
 if [ "$sourceHtmlUrl" == "" ]
@@ -300,14 +418,11 @@ if [ -f "setup.py" ]
 then
   echo
   echog "Install with ${green}checkinstall ... python setup.py install${TOA}"
-  # --spec foo -> forget the ugly spec file
-  sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $checkinstallParam python setup.py install
+  sudo checkinstall --spec foo --maintainer \""$maintainer"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $checkinstallParam python setup.py install
 else
   echo
   echog "Install with ${green}checkinstall ...${TOA}"
-  # --spec foo -> forget the ugly spec file
-  sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\"
+  sudo checkinstall --spec foo --maintainer \""$maintainer"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\"
 fi
 
 exit 0
-
