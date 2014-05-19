@@ -101,7 +101,7 @@ function cleanup {
   exit 1
 }
 
-$(command checkinstalll)
+$(command checkinstall)
 okfail; [ $? -gt 0 ] && cleanup
 
 autogenParam=""
