@@ -63,7 +63,7 @@ function   echogn() {
 # Prints OK or FAILED! depending on previous command return value
 function okfail () {
   if [ $? -gt 0 ]; then
-    logError "Es trat ein Fehler auf. Bitte vorhergehende Ausgaben überprüfen. Breche ab."
+    logError "Es trat ein Fehler auf. Breche ab."
     return 1
   else
     logInfo "OK"
@@ -101,8 +101,11 @@ function cleanup {
   exit 1
 }
 
-$(command checkinstall)
-okfail; [ $? -gt 0 ] && cleanup
+if [ "$(command -v checkinstall)" == "" ]
+then
+  logError "checkinstall nicht installiert. Breche ab."
+  cleanup
+fi
 
 autogenParam=""
 configureParam=""
@@ -306,3 +309,4 @@ else
 fi
 
 exit 0
+
