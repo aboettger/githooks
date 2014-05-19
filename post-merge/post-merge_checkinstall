@@ -18,8 +18,8 @@
 #
 #
 #
-# TODO JSON (http://www.jsoneditoronline.org/) Konfiguration berücksichtigen, jeweils in ".git/hooks/postmergerc"
-# z.B.
+# TODO JSON (http://www.jsoneditoronline.org/) Evaluate configuration in "postmergerc", respectively in the directory ".git/hooks/postmergerc"
+# e.g.
 #	{
 #	  "autogen": "--with-gtk=3.0",
 #	  "configure": "",
@@ -33,7 +33,8 @@ trap trapint 2
 red="\e[0;31m"
 green="\e[0;32m"
 yellow="\e[0;33m"
-NC="\e[0m" # No Color
+TOA="\e[0m" # Turn off character attributes
+bold="\e[0;1m"
 
 # Enable alias expansion in command substitution
 shopt -s expand_aliases
@@ -63,7 +64,7 @@ function   echogn() {
 # Prints OK or FAILED! depending on previous command return value
 function okfail () {
   if [ $? -gt 0 ]; then
-    logError "Es trat ein Fehler auf. Breche ab."
+    logError "There was an error. Aborting."
     return 1
   else
     logInfo "OK"
@@ -73,17 +74,17 @@ function okfail () {
 
 function logInfo () {
   green="\e[0;32m"
-  echog "${green}$1${NC}"
+  echog "${green}$1${TOA}"
 }
 
 function logWarn () {
   yellow="\e[0;33m"
-  echog "${yellow}$1${NC}"
+  echog "${yellow}$1${TOA}"
 }
 
 function logError () {
   red="\e[0;31m"
-  echog "${red}$1${NC}"
+  echog "${red}$1${TOA}"
 }
 
 function trapint {
@@ -103,7 +104,7 @@ function cleanup {
 
 if [ "$(command -v checkinstall)" == "" ]
 then
-  logError "checkinstall nicht installiert. Breche ab."
+  logError "Checkinstall not installed. Aborting."
   cleanup
 fi
 
@@ -113,19 +114,19 @@ checkinstallParam=""
 
 if [ -f ".git/hooks/postmergerc" ]
 then
-  logInfo "\".git/hooks/postmergerc\" gefunden"
+  logInfo "\".git/hooks/postmergerc\" found"
   
   autogenParam=$(jq '.autogen' .git/hooks/postmergerc | tr -d "\"")
-  if [ "$autogenParam" != "" ]; then echog "Zusätzliche Parameter autogen"; echog "\t${green}$autogenParam${NC}"; fi
+  if [ "$autogenParam" != "" ]; then echog "Additional parameters for ${bold}autogen${TOA}"; echog "\t${green}$autogenParam${TOA}"; fi
 
   configureParam=$(jq '.configure' .git/hooks/postmergerc | tr -d "\"")
-  if [ "$configureParam" != "" ]; then echog "Zusätzliche Parameter configure"; echog "\t${green}$configureParam${NC}"; fi
+  if [ "$configureParam" != "" ]; then echog "Additional parameters for ${bold}configure${TOA}"; echog "\t${green}$configureParam${TOA}"; fi
   
   makeParam=$(jq '.make' .git/hooks/postmergerc | tr -d "\"")
-  if [ "$makeParam" != "" ]; then echog "Zusätzliche Parameter make"; echog "\t${green}$makeParam${NC}"; fi
+  if [ "$makeParam" != "" ]; then echog "Additional parameters for ${bold}make${TOA}"; echog "\t${green}$makeParam${TOA}"; fi
 
   checkinstallParam=$(jq '.checkinstall' .git/hooks/postmergerc | tr -d "\"")
-  if [ "$checkinstallParam" != "" ]; then echog "Zusätzliche Parameter checkinstall"; echog "\t${green}$checkinstallParam${NC}"; fi
+  if [ "$checkinstallParam" != "" ]; then echog "Additional parameters for ${bold}checkinstall${TOA}"; echog "\t${green}$checkinstallParam${TOA}"; fi
   echo
 fi
 
@@ -142,32 +143,32 @@ isGitHub=$(echo "$responseGitHub" | jq '.errors <= 0')
 
 if [ "$isGitHub" == "true" ]
 then
-  logInfo "Gehostet auf GitHub, API kann verwendet werden."
+  logInfo "Hosted on GitHub. GitHub-API can be used."
   echo
 fi
 
 if [ "$(command -v easy_install)" != "" ]
 then
-  logWarn "Das Programm \"easy_install\" aus dem Paket \"python-setuptools\" ist installiert. Das kann in Verbindung mit dem hier verwendeten \"checkinstall\" zu Problemen führen."
+  logWarn "The program \"easy_install\" from the package \"python-setuptools\" is installed. This can make problems with \"checkinstall\"."
 fi
 
 exec < /dev/tty
 
 while true; do
-  read -n 1 -p "$name installieren? [y/n]: " yn
+  read -n 1 -p "$name install? [y/n]: " yn
   echo;
   case $yn in
     [Yy]* )
       
     break;;
     [Nn]* ) exit;;
-    * ) echo "Bitte mit yes oder no antworten.";;
+    * ) echo "Please respond with [y]es or [n]o.";;
   esac
 done
 
 if [ -f description-pak ]
 then
-  echog "Lösche ${yellow}description-pak${NC}"
+  logWarn "Delete description-pak"
   if [ -w description-pak ]
   then
     rm description-pak
@@ -180,21 +181,21 @@ fi
 
 if [ -f autogen.sh ]
 then
-  logInfo "Starte autogen.sh"
+  logInfo "Starting autogen.sh"
   ./autogen.sh $autogenParam
   okfail; [ $? -gt 0 ] && exit 1
 fi
 
 if [ -f configure ]
 then
-  logInfo "Starte configure"
+  logInfo "Starting configure"
   ./configure $configureParam
   okfail; [ $? -gt 0 ] && exit 1
 fi
 
 if [ -f "Makefile" ]
 then
-  logInfo "Starte make"
+  logInfo "Starting make"
   make $makeParam
   okfail; [ $? -gt 0 ] && exit 1
 fi
@@ -218,13 +219,13 @@ fi
 
 if [ -f "debian/changelog" ]
 then
-  echog "Verwende: ${green}debian/changelog${NC}"
+  echog "Search for information via ${green}debian/changelog${TOA}"
   if [ "$version" == "" ]; then version=$(head -1 "debian/changelog" | gawk -F " " '{print $2}' |  tr -d "()"); fi
 fi
 
 if [ -f "debian/control" ]
 then
-  echog "Verwende: ${green}debian/control${NC}"
+  echog "Search for information via ${green}debian/control${TOA}"
   if [ "$architecture" == "" ]; then architecture=$(grep '^ *Architecture *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " "); fi
   if [ "$requires" == "" ]; then requires=$(grep '^ *Depends *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " "); fi
   if [ "$maintainer" == "" ]; then maintainer=$(grep '^ *Maintainer *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//'); fi
@@ -234,60 +235,60 @@ fi
 
 if [ -f "Makefile" ]
 then
-  echog "Verwende: ${green}Makefile${NC}"
+  echog "Search for information via ${green}Makefile${TOA}"
   if [ "$version" == "" ]; then version=$(grep '^ *PACKAGE_VERSION *= *' Makefile | gawk -F "=" '{print $2}' |  tr -d " "); fi
-  if [ "$version" != "" ]; then echog "\tVersion: ${green}$version${NC}"; fi
+  if [ "$version" != "" ]; then echog "\tVersion: ${green}$version${TOA}"; fi
 fi
 
 if [ -f "$name.spec" ]
 then
-  echog "Verwende: ${green}$name.spec${NC}"
+  echog "Search for information via ${green}$name.spec${TOA}"
   if [ "$license" == "" ]; then license=$(grep '^ *License *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " "); fi
-  if [ "$license" != "" ]; then echog "\tLicense: ${green}$license${NC}"; fi
+  if [ "$license" != "" ]; then echog "\tLicense: ${green}$license${TOA}"; fi
   
   if [ "$group" == "" ]; then group=$(grep '^ *Group *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " "); fi
-  if [ "$group" != "" ]; then echog "\tGroup: ${green}$group${NC}"; fi
+  if [ "$group" != "" ]; then echog "\tGroup: ${green}$group${TOA}"; fi
   
   if [ "$summary" == "" ]; then summary=$(grep '^ *Summary *' "$name.spec" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//'); echo "$summary" > description-pak; fi
-  if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${NC}"; fi
+  if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${TOA}"; fi
   
   if [ "$requires" == "" ]; then requires=$(grep '^ *Requires *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " " | tr '\n' ',' | sed -e 's/^,*//' -e 's/,*$//'); fi
-  if [ "$requires" != "" ]; then echog "\tRequires: ${green}$requires${NC}"; fi
+  if [ "$requires" != "" ]; then echog "\tRequires: ${green}$requires${TOA}"; fi
 fi
 
 if [ -f "setup.py" ]
 then
   if [ ! -x "setup.py" ]
   then
-    echog "${red}setup.py ist nicht ausführbar -> Abbruch.${NC}"
-    exit
+    echog "${red}setup.py is not executable. Aborting.${TOA}"
+    exit 1
   else
-    echog "Verwende: ${green}setup.py${NC}"
+    echog "Search for information via ${green}setup.py${TOA}"
     if [ "$maintainer" == "" ]; then maintainer=$(./setup.py --author); fi
-    if [ "$maintainer" != "" ]; then echog "\tMaintainer: ${green}$maintainer${NC}"; fi
+    if [ "$maintainer" != "" ]; then echog "\tMaintainer: ${green}$maintainer${TOA}"; fi
     
     if [ "$maintainermail" == "" ]; then maintainermail=$(./setup.py --author-email); fi
-    if [ "$maintainermail" != "" ]; then echog "\tMaintainer eMail: ${green}$maintainermail${NC}"; fi
+    if [ "$maintainermail" != "" ]; then echog "\tMaintainer eMail: ${green}$maintainermail${TOA}"; fi
     
     if [ "$version" == "" ]; then version=$(./setup.py --version); fi
-    if [ "$version" != "" ]; then echog "\tVersion: ${green}$version${NC}"; fi
+    if [ "$version" != "" ]; then echog "\tVersion: ${green}$version${TOA}"; fi
     
     if [ "$license" == "" ]; then license=$(./setup.py --license); fi
-    if [ "$license" != "" ]; then echog "\tLicense: ${green}$license${NC}"; fi
+    if [ "$license" != "" ]; then echog "\tLicense: ${green}$license${TOA}"; fi
     
     if [ "$requires" == "" ]; then requires=$(./setup.py --requires); fi
-    if [ "$requires" != "" ]; then echog "\tRequires: ${green}$requires${NC}"; fi
+    if [ "$requires" != "" ]; then echog "\tRequires: ${green}$requires${TOA}"; fi
     
     if [ "$summary" == "" ]; then summary=$(./setup.py --description); echo "$summary" > description-pak; fi
-    if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${NC}"; fi
+    if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${TOA}"; fi
   fi
 fi
 
 if [ "$isGitHub" == "true" ]
 then
-  echog "Verwende: ${green}GitHub-API${NC}"
+  echog "Search for information via ${green}GitHub-API${TOA}"
   if [ "$summary" == "" ]; then summary=$(echo "$responseGitHub" | jq '.items[].description' | sed -e 's/^"*//' -e 's/"*$//'); echo "$summary" > description-pak; fi
-  if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${NC}"; fi
+  if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${TOA}"; fi
 fi
 
 if [ "$sourceHtmlUrl" == "" ]
@@ -298,12 +299,12 @@ fi
 if [ -f "setup.py" ]
 then
   echo
-  echog "Installiere mit ${green}checkinstall ... python setup.py install${NC}"
+  echog "Install with ${green}checkinstall ... python setup.py install${TOA}"
   # --spec foo -> forget the ugly spec file
   sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $checkinstallParam python setup.py install
 else
   echo
-  echog "Installiere mit ${green}checkinstall ...${NC}"
+  echog "Install with ${green}checkinstall ...${TOA}"
   # --spec foo -> forget the ugly spec file
   sudo checkinstall --spec foo --maintainer \""$maintainer ($maintainermail)"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\"
 fi
