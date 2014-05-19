@@ -219,13 +219,13 @@ fi
 
 if [ -f "debian/changelog" ]
 then
-  echog "Search for information via ${green}debian/changelog${TOA}"
+  echog "Search for information via ${bold}debian/changelog${TOA}"
   if [ "$version" == "" ]; then version=$(head -1 "debian/changelog" | gawk -F " " '{print $2}' |  tr -d "()"); fi
 fi
 
 if [ -f "debian/control" ]
 then
-  echog "Search for information via ${green}debian/control${TOA}"
+  echog "Search for information via ${bold}debian/control${TOA}"
   if [ "$architecture" == "" ]; then architecture=$(grep '^ *Architecture *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " "); fi
   if [ "$requires" == "" ]; then requires=$(grep '^ *Depends *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " "); fi
   if [ "$maintainer" == "" ]; then maintainer=$(grep '^ *Maintainer *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//'); fi
@@ -235,14 +235,14 @@ fi
 
 if [ -f "Makefile" ]
 then
-  echog "Search for information via ${green}Makefile${TOA}"
+  echog "Search for information via ${bold}Makefile${TOA}"
   if [ "$version" == "" ]; then version=$(grep '^ *PACKAGE_VERSION *= *' Makefile | gawk -F "=" '{print $2}' |  tr -d " "); fi
   if [ "$version" != "" ]; then echog "\tVersion: ${green}$version${TOA}"; fi
 fi
 
 if [ -f "$name.spec" ]
 then
-  echog "Search for information via ${green}$name.spec${TOA}"
+  echog "Search for information via ${bold}$name.spec${TOA}"
   if [ "$license" == "" ]; then license=$(grep '^ *License *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " "); fi
   if [ "$license" != "" ]; then echog "\tLicense: ${green}$license${TOA}"; fi
   
@@ -263,7 +263,7 @@ then
     echog "${red}setup.py is not executable. Aborting.${TOA}"
     exit 1
   else
-    echog "Search for information via ${green}setup.py${TOA}"
+    echog "Search for information via ${bold}setup.py${TOA}"
     if [ "$maintainer" == "" ]; then maintainer=$(./setup.py --author); fi
     if [ "$maintainer" != "" ]; then echog "\tMaintainer: ${green}$maintainer${TOA}"; fi
     
@@ -286,7 +286,7 @@ fi
 
 if [ "$isGitHub" == "true" ]
 then
-  echog "Search for information via ${green}GitHub-API${TOA}"
+  echog "Search for information via ${bold}GitHub-API${TOA}"
   if [ "$summary" == "" ]; then summary=$(echo "$responseGitHub" | jq '.items[].description' | sed -e 's/^"*//' -e 's/"*$//'); echo "$summary" > description-pak; fi
   if [ "$summary" != "" ]; then echog "\tSummary: ${green}$summary${TOA}"; fi
 fi
