@@ -183,6 +183,17 @@ fi
 exec < /dev/tty
 
 while true; do
+  read -n 1 -p "Show diff? [y/n]: " yn
+  echo;
+  case $yn in
+    [Yy]* ) git diff HEAD^ HEAD;
+    break;;
+    [Nn]* ) exit;;
+    * ) echo "Please respond with [y]es or [n]o.";;
+  esac
+done
+
+while true; do
   read -n 1 -p "$name install? [y/n]: " yn
   echo;
   case $yn in
