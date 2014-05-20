@@ -188,7 +188,8 @@ while true; do
   case $yn in
     [Yy]* ) git diff HEAD^ HEAD;
     break;;
-    [Nn]* ) exit;;
+    [Nn]* )
+    break;;
     * ) echo "Please respond with [y]es or [n]o.";;
   esac
 done
