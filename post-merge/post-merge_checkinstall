@@ -195,7 +195,7 @@ while true; do
 done
 
 while true; do
-  read -n 1 -p "$name install? [y/n]: " yn
+  read -n 1 -p "Install $name? [y/n]: " yn
   echo;
   case $yn in
     [Yy]* )
