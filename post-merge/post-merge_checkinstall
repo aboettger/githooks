@@ -104,7 +104,8 @@ function cleanup {
 
 function writeDescriptionPak {
   if [ "$1" != "" ]
-    then echo "$1" > description-pak
+  then
+    echo "$1" > description-pak
   fi
 }
 
@@ -182,17 +183,17 @@ fi
 
 exec < /dev/tty
 
-while true; do
-  read -n 1 -p "Show diff? [y/n]: " yn
-  echo;
-  case $yn in
-    [Yy]* ) git diff HEAD^ HEAD;
-    break;;
-    [Nn]* )
-    break;;
-    * ) echo "Please respond with [y]es or [n]o.";;
-  esac
-done
+#while true; do
+#  read -n 1 -p "Show diff? [y/n]: " yn
+#  echo;
+#  case $yn in
+#    [Yy]* ) git diff HEAD^ HEAD;
+#    break;;
+#    [Nn]* )
+#    break;;
+#    * ) echo "Please respond with [y]es or [n]o.";;
+#  esac
+#done
 
 while true; do
   read -n 1 -p "Install $name? [y/n]: " yn
