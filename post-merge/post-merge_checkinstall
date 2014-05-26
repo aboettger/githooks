@@ -147,8 +147,13 @@ autogenParam=""
 configureParam=""
 checkinstallParam=""
 
-if [ -f ".git/hooks/postmergerc" ]
+if [ ! -f ".git/hooks/postmergerc" ]
 then
+  logWarn "\".git/hooks/postmergerc\" not found, create a configuration."
+  #touch ".git/hooks/postmergerc"
+ls -la "."
+  echo -e "{\n \"autogen\": \"\",\n \"configure\": \"\",\n \"make\": \"\",\n \"checkinstall\": \"\"\n}" > ".git/hooks/postmergerc"
+else
   logInfo "\".git/hooks/postmergerc\" found"
   
   autogenParam=$(jq '.autogen' .git/hooks/postmergerc | tr -d "\"")
@@ -227,7 +232,8 @@ then
   okfail; [ $? -gt 0 ] && exit 1
 fi
 
-if [ -f configure ]
+# configure only if there isn't autogen.sh
+if [ ! -f autogen.sh && -f configure ]
 then
   logInfo "Starting configure"
   ./configure $configureParam
