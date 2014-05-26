@@ -150,7 +150,6 @@ checkinstallParam=""
 if [ ! -f ".git/hooks/postmergerc" ]
 then
   logWarn "\".git/hooks/postmergerc\" not found, create a configuration."
-ls -la "."
   echo -e "{\n \"autogen\": \"\",\n \"configure\": \"\",\n \"make\": \"\",\n \"checkinstall\": \"\"\n}" > ".git/hooks/postmergerc"
 else
   logInfo "\".git/hooks/postmergerc\" found"
