@@ -143,6 +143,12 @@ then
   cleanup
 fi
 
+if [ ! -d ".git" ]
+then
+  logError "No GIT project. Aborting"
+  cleanup
+fi
+
 autogenParam=""
 configureParam=""
 checkinstallParam=""
