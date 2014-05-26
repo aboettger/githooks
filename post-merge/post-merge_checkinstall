@@ -205,7 +205,7 @@ exec < /dev/tty
 #done
 
 while true; do
-  read -n 1 -p "Install $name? [y/n]: " yn
+  read -n 1 -p "Compile and install? $name? [y/n]: " yn
   echo;
   case $yn in
     [Yy]* )
@@ -237,7 +237,7 @@ then
 fi
 
 # configure only if there isn't autogen.sh
-if [ ! -f autogen.sh && -f configure ]
+if [ ! -f autogen.sh ] && [ -f configure ]
 then
   logInfo "Starting configure"
   ./configure $configureParam
