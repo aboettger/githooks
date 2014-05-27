@@ -437,6 +437,8 @@ then
   sourceHtmlUrl="$source"
 fi
 
+requires=$(echo "$requires" | tr ',' '\n' | sed 's/\([<<>>==].*\)/(\1)/' | sed -e $'s/((/(/g' | sed -e $'s/))/)/g')
+requires=$(echo "$requires" | tr '\n' ',' | sed -e 's/^,*//' -e 's/,*$//')
 if [ -f "setup.py" ]
 then
   echo
