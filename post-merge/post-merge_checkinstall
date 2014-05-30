@@ -139,7 +139,13 @@ function logLicense {
 
 if [ "$(command -v checkinstall)" == "" ]
 then
-  logError "Checkinstall not installed. Aborting."
+  logError "checkinstall not installed. Aborting."
+  cleanup
+fi
+
+if [ "$(command -v jshon)" == "" ]
+then
+  logError "jshon not installed. Aborting."
   cleanup
 fi
 
@@ -160,16 +166,16 @@ then
 else
   logInfo "\".git/hooks/postmergerc\" found"
   
-  autogenParam=$(jq '.autogen' .git/hooks/postmergerc | tr -d "\"")
+  autogenParam=$(jshon -e 'autogen' < .git/hooks/postmergerc | tr -d "\"" | tr -d "\\\\")
   if [ "$autogenParam" != "" ]; then echog "Additional parameters for ${bold}autogen${TOA}"; echog "\t${green}$autogenParam${TOA}"; fi
 
-  configureParam=$(jq '.configure' .git/hooks/postmergerc | tr -d "\"")
+  configureParam=$(jshon -e 'configure' < .git/hooks/postmergerc | tr -d "\"" | tr -d "\\\\")
   if [ "$configureParam" != "" ]; then echog "Additional parameters for ${bold}configure${TOA}"; echog "\t${green}$configureParam${TOA}"; fi
   
-  makeParam=$(jq '.make' .git/hooks/postmergerc | tr -d "\"")
+  makeParam=$(jshon -e 'make' < .git/hooks/postmergerc | tr -d "\"" | tr -d "\\\\")
   if [ "$makeParam" != "" ]; then echog "Additional parameters for ${bold}make${TOA}"; echog "\t${green}$makeParam${TOA}"; fi
 
-  checkinstallParam=$(jq '.checkinstall' .git/hooks/postmergerc | tr -d "\"")
+  checkinstallParam=$(jshon -e 'checkinstall' < .git/hooks/postmergerc | tr -d "\"" | tr -d "\\\\")
   if [ "$checkinstallParam" != "" ]; then echog "Additional parameters for ${bold}checkinstall${TOA}"; echog "\t${green}$checkinstallParam${TOA}"; fi
   echo
 fi
@@ -183,7 +189,14 @@ gitowner=$(echo "$source" | gawk -F "/" '{ print ( $(NF-1) ) }' | gawk -F ":" '{
 release=$(($(git rev-list HEAD --count) - 1))
 
 responseGitHub=$(curl -s "https://api.github.com/search/repositories?q=+repo:$gitowner/$name")
-isGitHub=$(echo "$responseGitHub" | jq '.errors <= 0')
+responseGitHubError=$(echo "$responseGitHub" | jshon -Q -e "errors")
+
+if [ "$responseGitHubError" == "" ]
+then
+  isGitHub="true"
+else
+  isGitHub="false"
+fi
 
 if [ "$(command -v easy_install)" != "" ]
 then
@@ -262,7 +275,7 @@ sourceHtmlUrl=""
 
 if [ "$isGitHub" == "true" ]
 then
-  sourceHtmlUrl=$(echo "$responseGitHub" | jq '.items[].html_url')
+  sourceHtmlUrl=$(echo "$responseGitHub" | jshon -e "items" -e 0 -e "html_url")
 fi
 
 ####################
@@ -271,7 +284,7 @@ fi
 if [ -f "debian/changelog" ]
 then
   echog "Search for information via ${bold}debian/changelog${TOA}"
-
+  
   versionDebianChangelog=$(head -1 "debian/changelog" | gawk -F " " '{print $2}' |  tr -d "()")
   logVersion "$versionDebianChangelog"
   if [ "$version" == "" ]; then version=$versionDebianChangelog; fi
@@ -283,23 +296,23 @@ fi
 if [ -f "debian/control" ]
 then
   echog "Search for information via ${bold}debian/control${TOA}"
-
+  
   architectureDebianControl=$(grep '^ *Architecture *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " ")
   logArchitecture "$architectureDebianControl"
   if [ "$architecture" == "" ]; then architecture=$architectureDebianControl; fi
-
+  
   requiresDebianControl=$(grep '^ *Depends *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " ")
   logRequires "$requiresDebianControl"
   if [ "$requires" == "" ]; then requires=$requiresDebianControl; fi
-
+  
   maintainerDebianControl=$(grep '^ *Maintainer *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
   logMaintainer "$maintainerDebianControl"
   if [ "$maintainer" == "" ]; then maintainer=$maintainerDebianControl; fi
-
+  
   groupDebianControl=$(grep '^ *Section *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
   logGroup "$groupDebianControl"
   if [ "$group" == "" ]; then group=$groupDebianControl; fi
-
+  
   summaryDebianControl=$(grep '^ *Description *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
   logSummary "$summaryDebianControl"
   if [ "$summary" == "" ]
@@ -315,7 +328,7 @@ fi
 if [ -f "Makefile" ]
 then
   echog "Search for information via ${bold}Makefile${TOA}"
-
+  
   versionMakefile=$(grep '^ *PACKAGE_VERSION *= *' Makefile | gawk -F "=" '{print $2}' |  tr -d " ")
   logVersion "$versionMakefile"
   if [ "$version" == "" ]; then version=$versionMakefile; fi
@@ -356,7 +369,7 @@ fi
 if [ -f "$name.spec" ]
 then
   echog "Search for information via ${bold}$name.spec${TOA}"
-
+  
   licenseSpec=$(grep '^ *License *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " ")
   logLicense "$licenseSpec"
   if [ "$license" == "" ]; then license=$licenseSpec; fi
@@ -364,7 +377,7 @@ then
   groupSpec=$(grep '^ *Group *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " ")
   logGroup "$groupSpec"
   if [ "$group" == "" ]; then group=$groupSpec; fi
-
+  
   summarySpec=$(grep '^ *Summary *' "$name.spec" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
   logSummary "$summarySpec"
   if [ "$summary" == "" ]
@@ -372,7 +385,7 @@ then
     summary=$summarySpec
     writeDescriptionPak "$summarySpec"
   fi
-
+  
   requiresSpec=$(grep '^ *Requires *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " " | tr '\n' ',' | sed -e 's/^,*//' -e 's/,*$//')
   logRequires "$requiresSpec"
   if [ "$requires" == "" ]; then requires=$requiresSpec; fi
@@ -389,23 +402,23 @@ then
     exit 1
   else
     echog "Search for information via ${bold}setup.py${TOA}"
-
+    
     maintainerSetupPy="$(./setup.py --author) ($(./setup.py --author-email))"
     logMaintainer "$maintainerSetupPy"
     if [ "$maintainer" == "" ]; then maintainer=$maintainerSetupPy; fi
-
+    
     versionSetupPy=$(./setup.py --version)
     logVersion "$versionSetupPy"
     if [ "$version" == "" ]; then version=$versionSetupPy; fi
-
+    
     licenseSetupPy=$(./setup.py --license)
     logLicense "$licenseSetupPy"
     if [ "$license" == "" ]; then license=$licenseSetupPy; fi
-
+    
     requiresSetupPy=$(./setup.py --requires)
     logRequires "$requiresSetupPy"
     if [ "$requires" == "" ]; then requires=$requiresSetupPy; fi
-
+    
     summarySetupPy=$(./setup.py --description)
     logSummary "$summarySetupPy"
     if [ "$summary" == "" ]
@@ -422,8 +435,8 @@ fi
 if [ "$isGitHub" == "true" ]
 then
   echog "Search for information via ${bold}GitHub-API${TOA}"
-
-  summaryGitHubApi=$(echo "$responseGitHub" | jq '.items[].description' | sed -e 's/^"*//' -e 's/"*$//')
+  
+  summaryGitHubApi=$(echo "$responseGitHub" | jshon -e "items" -e 0 -e "description" | sed -e 's/^"*//' -e 's/"*$//' | tr -d "\\")
   logSummary "$summaryGitHubApi"
   if [ "$summary" == "" ]
   then
@@ -439,6 +452,7 @@ fi
 
 requires=$(echo "$requires" | tr ',' '\n' | sed 's/\([<<>>==].*\)/(\1)/' | sed -e $'s/((/(/g' | sed -e $'s/))/)/g')
 requires=$(echo "$requires" | tr '\n' ',' | sed -e 's/^,*//' -e 's/,*$//')
+
 if [ -f "setup.py" ]
 then
   echo
@@ -451,3 +465,4 @@ else
 fi
 
 exit 0
+
