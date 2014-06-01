@@ -436,13 +436,39 @@ if [ "$isGitHub" == "true" ]
 then
   echog "Search for information via ${bold}GitHub-API${TOA}"
   
-  summaryGitHubApi=$(echo "$responseGitHub" | jshon -e "items" -e 0 -e "description" | sed -e 's/^"*//' -e 's/"*$//' | tr -d "\\")
+  summaryGitHubApi=$(echo "$responseGitHub" | jshon -e "items" -e 0 -e "description" | sed -e 's/^"*//' -e 's/"*$//' | tr -d "\\\\")
   logSummary "$summaryGitHubApi"
   if [ "$summary" == "" ]
   then
     summary=$summaryGitHubApi
     writeDescriptionPak "$summaryGitHubApi"
   fi
+fi
+
+####################
+# PATH
+####################
+projectBasename=$(basename "${PWD}")
+delimiterPos=$(expr index $projectBasename "-")
+
+if [ "$delimiterPos" != "0" ]
+then
+  versionPath=${projectBasename:delimiterPos}
+else
+  versionPath=""
+fi
+echog "Search for information via ${bold}Path${TOA}"
+
+logVersion "$versionPath"
+if [ "$version" == "" ]; then version=$versionPath; fi
+
+####################
+# Set standard values if nothing
+####################
+
+if [ "$version" == "" ] || [[ ${version:0:1} =~ ^[^0-9] ]]
+then
+  version="$(date +%Y%m%d)"
 fi
 
 if [ "$sourceHtmlUrl" == "" ]
@@ -465,4 +491,3 @@ else
 fi
 
 exit 0
-
