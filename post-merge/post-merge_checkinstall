@@ -139,15 +139,19 @@ then
   cleanup
 fi
 
+isGit="1"
 if [ ! -d ".git" ]
 then
-  logError "No GIT project. Aborting"
-  cleanup
+  logWarn "No GIT project. Aborting"
+  isGit="0"
+  #cleanup
 fi
 
 autogenParam=""
 configureParam=""
 checkinstallParam=""
+
+logInfo ${PWD}
 
 projectBasename=$(basename "${PWD}")
 configPath="$HOME/.config/postmergerc/$projectBasename"
@@ -195,18 +199,21 @@ else
 fi
 
 # GIT
-source=$(git config --get remote.origin.url)
-#name=$(echo $source | gawk -F "/" '{print $5}' | sed -e 's/\.git$//')
-#name=$(git remote -v | head -n1 | awk '{print $2}' | sed -e 's,.*:\(.*/\)\?,,' -e 's/\.git$//')
-name=$(basename $(git config --get remote.$(git config --get branch.master.remote).url) .git)
-gitowner=$(echo "$source" | gawk -F "/" '{ print ( $(NF-1) ) }' | gawk -F ":" '{ print ( $(NF) ) }')
-#release=$(($(git rev-list HEAD --count)))
-release=$(git log | grep "^commit" | wc -l)
+if [ "$isGit" == "1" ]
+then
+  source=$(git config --get remote.origin.url)
+  #name=$(echo $source | gawk -F "/" '{print $5}' | sed -e 's/\.git$//')
+  #name=$(git remote -v | head -n1 | awk '{print $2}' | sed -e 's,.*:\(.*/\)\?,,' -e 's/\.git$//')
+  name=$(basename $(git config --get remote.$(git config --get branch.master.remote).url) .git)
+  gitowner=$(echo "$source" | gawk -F "/" '{ print ( $(NF-1) ) }' | gawk -F ":" '{ print ( $(NF) ) }')
+  #release=$(($(git rev-list HEAD --count)))
+  release=$(git log | grep "^commit" | wc -l)
 
-responseGitHub=$(curl -s "https://api.github.com/search/repositories?q=+repo:$gitowner/$name")
-responseGitHubError=$(echo "$responseGitHub" | jshon -Q -e "errors")
+  responseGitHub=$(curl -s "https://api.github.com/search/repositories?q=+repo:$gitowner/$name")
+  responseGitHubError=$(echo "$responseGitHub" | jshon -Q -e "errors")
+fi
 
-if [ "$responseGitHubError" == "" ]
+if [ "$responseGitHubError" == "" ] && [ "$isGit" == "1" ]
 then
   isGitHub="true"
 else
