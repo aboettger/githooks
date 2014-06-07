@@ -17,16 +17,6 @@
 #    the author of checkinstall for the many ideas
 #
 #
-#
-# TODO JSON (http://www.jsoneditoronline.org/) Evaluate configuration in "postmergerc", respectively in the directory ".git/hooks/postmergerc"
-# e.g.
-#	{
-#	  "autogen": "--with-gtk=3.0",
-#	  "configure": "",
-#	  "make": "",
-#	  "checkinstall": "--exclude /usr/local/lib/python2.7/dist-packages/easy-install.pth"
-#	}
-
 # Trap the INT signal (ctrl-c, for example)
 trap trapint 2
 
@@ -159,23 +149,47 @@ autogenParam=""
 configureParam=""
 checkinstallParam=""
 
-if [ ! -f ".git/hooks/postmergerc" ]
+projectBasename=$(basename "${PWD}")
+configPath="$HOME/.config/postmergerc/$projectBasename"
+
+# Found an old configuration
+if [ -f ".git/hooks/postmergerc" ]
 then
-  logWarn "\".git/hooks/postmergerc\" not found, create a configuration."
-  echo -e "{\n \"autogen\": \"\",\n \"configure\": \"\",\n \"make\": \"\",\n \"checkinstall\": \"\"\n}" > ".git/hooks/postmergerc"
+  exec < /dev/tty
+
+  while true; do
+    read -n 1 -p "Old configuration \".git/hooks/postmergerc\" found. Should I copy it to the new location.? [y/n]: " yn
+    echo;
+    case $yn in
+      [Yy]* ) mv ".git/hooks/postmergerc" "$configPath";
+        okfail; [ $? -gt 0 ] && exit 1
+      break;;
+      [Nn]* )
+      break;;
+      * ) echo "Please respond with [y]es or [n]o.";;
+    esac
+  done
+fi
+
+if [ ! -f "$configPath" ]
+then
+  logWarn "\"$configPath\" not found, create a default configuration."
+  mkdir -p "$HOME/.config/postmergerc"
+  echo -e "{\n \"autogen\": \"\",\n \"configure\": \"\",\n \"make\": \"\",\n \"checkinstall\": \"\"\n}" > "$configPath"
+  okfail; [ $? -gt 0 ] && exit 1
 else
-  logInfo "\".git/hooks/postmergerc\" found"
+  logInfo "\"$configPath\" found"
   
-  autogenParam=$(jshon -e 'autogen' < .git/hooks/postmergerc | tr -d "\"" | tr -d "\\\\")
+  autogenParam=$(jshon -e 'autogen' < $configPath | tr -d "\"" | tr -d "\\\\")
   if [ "$autogenParam" != "" ]; then echog "Additional parameters for ${bold}autogen${TOA}"; echog "\t${green}$autogenParam${TOA}"; fi
 
-  configureParam=$(jshon -e 'configure' < .git/hooks/postmergerc | tr -d "\"" | tr -d "\\\\")
+  configureParam=$(jshon -e 'configure' < $configPath | tr -d "\"" | tr -d "\\\\")
   if [ "$configureParam" != "" ]; then echog "Additional parameters for ${bold}configure${TOA}"; echog "\t${green}$configureParam${TOA}"; fi
   
-  makeParam=$(jshon -e 'make' < .git/hooks/postmergerc | tr -d "\"" | tr -d "\\\\")
+  makeParam=$(jshon -e 'make' < $configPath | tr -d "\"" | tr -d "\\\\")
   if [ "$makeParam" != "" ]; then echog "Additional parameters for ${bold}make${TOA}"; echog "\t${green}$makeParam${TOA}"; fi
 
-  checkinstallParam=$(jshon -e 'checkinstall' < .git/hooks/postmergerc | tr -d "\"" | tr -d "\\\\")
+  checkinstallParam=$(jshon -e 'checkinstall' < $configPath | tr -d "\"" | tr -d "\\\\")
   if [ "$checkinstallParam" != "" ]; then echog "Additional parameters for ${bold}checkinstall${TOA}"; echog "\t${green}$checkinstallParam${TOA}"; fi
   echo
 fi
@@ -449,7 +463,6 @@ fi
 ####################
 # PATH
 ####################
-projectBasename=$(basename "${PWD}")
 delimiterPos=$(expr index $projectBasename "-")
 
 if [ "$delimiterPos" != "0" ]
