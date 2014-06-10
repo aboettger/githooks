@@ -156,7 +156,7 @@ configPath="$HOME/.config/postmergerc/$projectBasename"
 if [ -f ".git/hooks/postmergerc" ]
 then
   exec < /dev/tty
-
+  
   while true; do
     read -n 1 -p "Old configuration \".git/hooks/postmergerc\" found. Should I copy it to the new location.? [y/n]: " yn
     echo;
@@ -180,16 +180,16 @@ then
 else
   logInfo "\"$configPath\" found"
   
-  autogenParam=$(jshon -e 'autogen' < $configPath | tr -d "\"" | tr -d "\\\\")
+  autogenParam=$(jshon -e 'autogen' < "$configPath" | tr -d "\"" | tr -d "\\\\")
   if [ "$autogenParam" != "" ]; then echog "Additional parameters for ${bold}autogen${TOA}"; echog "\t${green}$autogenParam${TOA}"; fi
 
-  configureParam=$(jshon -e 'configure' < $configPath | tr -d "\"" | tr -d "\\\\")
+  configureParam=$(jshon -e 'configure' < "$configPath" | tr -d "\"" | tr -d "\\\\")
   if [ "$configureParam" != "" ]; then echog "Additional parameters for ${bold}configure${TOA}"; echog "\t${green}$configureParam${TOA}"; fi
   
-  makeParam=$(jshon -e 'make' < $configPath | tr -d "\"" | tr -d "\\\\")
+  makeParam=$(jshon -e 'make' < "$configPath" | tr -d "\"" | tr -d "\\\\")
   if [ "$makeParam" != "" ]; then echog "Additional parameters for ${bold}make${TOA}"; echog "\t${green}$makeParam${TOA}"; fi
 
-  checkinstallParam=$(jshon -e 'checkinstall' < $configPath | tr -d "\"" | tr -d "\\\\")
+  checkinstallParam=$(jshon -e 'checkinstall' < "$configPath" | tr -d "\"" | tr -d "\\\\")
   if [ "$checkinstallParam" != "" ]; then echog "Additional parameters for ${bold}checkinstall${TOA}"; echog "\t${green}$checkinstallParam${TOA}"; fi
   echo
 fi
@@ -260,22 +260,43 @@ fi
 if [ -f autogen.sh ]
 then
   logInfo "Starting autogen.sh"
-  ./autogen.sh $autogenParam
+  ./autogen.sh "$autogenParam"
   okfail; [ $? -gt 0 ] && exit 1
 fi
 
-# configure only if there isn't autogen.sh
-if [ ! -f autogen.sh ] && [ -f configure ]
+if [ -f autogen.sh ] && [ -f configure ]
+then
+  exec < /dev/tty
+  
+  while true; do
+    read -n 1 -p "\"autogen.sh\" and \"configure\" found. Should I also run \"configure\"? [y/n]: " yn
+    echo;
+    case $yn in
+      [Yy]* )  logInfo "Starting configure";
+        ./configure "$configureParam"
+        okfail; [ $? -gt 0 ] && exit 1
+      break;;
+      [Nn]* )
+      break;;
+      * ) echo "Please respond with [y]es or [n]o.";;
+    esac
+  done
+elif [ -f configure ]
 then
   logInfo "Starting configure"
-  ./configure $configureParam
+  ./configure "$configureParam"
   okfail; [ $? -gt 0 ] && exit 1
 fi
 
 if [ -f "Makefile" ]
 then
   logInfo "Starting make"
-  make $makeParam
+  if [ "$makeParam" == "" ]
+  then
+    make
+  else
+    make "$makeParam"
+  fi
   okfail; [ $? -gt 0 ] && exit 1
 fi
 
@@ -505,3 +526,6 @@ else
 fi
 
 exit 0
+
+
+
