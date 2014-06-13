@@ -123,6 +123,10 @@ function logVersion {
   echog "\tVersion: ${green}$1${TOA}"
 }
 
+function logName {
+  echog "\tName: ${green}$1${TOA}"
+}
+
 function logLicense {
   echog "\tLicense: ${green}$1${TOA}"
 }
@@ -142,7 +146,7 @@ fi
 isGit="1"
 if [ ! -d ".git" ]
 then
-  logWarn "No GIT project. Aborting"
+  logWarn "No GIT project."
   isGit="0"
   #cleanup
 fi
@@ -150,8 +154,6 @@ fi
 autogenParam=""
 configureParam=""
 checkinstallParam=""
-
-logInfo ${PWD}
 
 projectBasename=$(basename "${PWD}")
 configPath="$HOME/.config/postmergerc/$projectBasename"
@@ -211,13 +213,13 @@ then
 
   responseGitHub=$(curl -s "https://api.github.com/search/repositories?q=+repo:$gitowner/$name")
   responseGitHubError=$(echo "$responseGitHub" | jshon -Q -e "errors")
-fi
 
-if [ "$responseGitHubError" == "" ] && [ "$isGit" == "1" ]
-then
-  isGitHub="true"
-else
-  isGitHub="false"
+  if [ "$responseGitHubError" == "" ]
+  then
+    isGitHub="true"
+  else
+    isGitHub="false"
+  fi
 fi
 
 if [ "$(command -v easy_install)" != "" ]
@@ -491,18 +493,25 @@ fi
 ####################
 # PATH
 ####################
-delimiterPos=$(expr index $projectBasename "-")
+firstParts=$(echo $projectBasename |  awk -F "-" '{ for (i=1; i<NF; i++) printf $i"-"}')
+lastPart=$(echo $projectBasename | awk -F "-" '{ print $NF }')
 
-if [ "$delimiterPos" != "0" ]
+if [[ ${lastPart:0:1} =~ ^[0-9] ]]
 then
-  versionPath=${projectBasename:delimiterPos}
+  versionPath=$lastPart
+  namePath=${firstParts%?}
 else
   versionPath=""
+  namePath=$projectBasename
 fi
+
 echog "Search for information via ${bold}Path${TOA}"
 
 logVersion "$versionPath"
 if [ "$version" == "" ]; then version=$versionPath; fi
+
+logName "$namePath"
+if [ "$name" == "" ]; then name=$namePath; fi
 
 ####################
 # Set standard values if nothing
@@ -516,6 +525,11 @@ fi
 if [ "$sourceHtmlUrl" == "" ]
 then
   sourceHtmlUrl="$source"
+fi
+
+if [ "$name" == "" ]
+then
+  name=$projectBasename
 fi
 
 requires=$(echo "$requires" | tr ',' '\n' | sed 's/\([<<>>==].*\)/(\1)/' | sed -e $'s/((/(/g' | sed -e $'s/))/)/g')
