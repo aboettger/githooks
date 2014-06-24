@@ -1,0 +1,31 @@
+#!/bin/bash
+
+green="\e[0;32m"
+TOA="\e[0m" # Turn off character attributes
+
+exec < /dev/tty
+
+while true; do
+  read -n 1 -p "Compile and install? [y/n]: " yn
+  echo;
+  case $yn in
+    [Yy]* )
+
+    break;;
+    [Nn]* ) exit;;
+    * ) echo "Please respond with [y]es or [n]o.";;
+  esac
+done
+
+cd ~/src/atom
+
+echo -e "${green}compile${TOA}"
+#script/build
+
+echo -e "${green}build debian packge${TOA}"
+#script/grunt mkdeb
+
+echo -e "${green}ls -la /tmp/atom-build${TOA}"
+ls -la /tmp/atom-build
+
+exit 0
