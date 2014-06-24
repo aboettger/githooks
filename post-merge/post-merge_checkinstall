@@ -162,7 +162,7 @@ configPath="$HOME/.config/postmergerc/$projectBasename"
 if [ -f ".git/hooks/postmergerc" ]
 then
   exec < /dev/tty
-  
+
   while true; do
     read -n 1 -p "Old configuration \".git/hooks/postmergerc\" found. Should I copy it to the new location.? [y/n]: " yn
     echo;
@@ -185,13 +185,13 @@ then
   okfail; [ $? -gt 0 ] && exit 1
 else
   logInfo "\"$configPath\" found"
-  
+
   autogenParam=$(jshon -e 'autogen' < "$configPath" | tr -d "\"" | tr -d "\\\\")
   if [ "$autogenParam" != "" ]; then echog "Additional parameters for ${bold}autogen${TOA}"; echog "\t${green}$autogenParam${TOA}"; fi
 
   configureParam=$(jshon -e 'configure' < "$configPath" | tr -d "\"" | tr -d "\\\\")
   if [ "$configureParam" != "" ]; then echog "Additional parameters for ${bold}configure${TOA}"; echog "\t${green}$configureParam${TOA}"; fi
-  
+
   makeParam=$(jshon -e 'make' < "$configPath" | tr -d "\"" | tr -d "\\\\")
   if [ "$makeParam" != "" ]; then echog "Additional parameters for ${bold}make${TOA}"; echog "\t${green}$makeParam${TOA}"; fi
 
@@ -206,7 +206,7 @@ then
   source=$(git config --get remote.origin.url)
   #name=$(echo $source | gawk -F "/" '{print $5}' | sed -e 's/\.git$//')
   #name=$(git remote -v | head -n1 | awk '{print $2}' | sed -e 's,.*:\(.*/\)\?,,' -e 's/\.git$//')
-  name=$(basename $(git config --get remote.$(git config --get branch.master.remote).url) .git)
+  #name=$(basename $(git config --get remote.$(git config --get branch.master.remote).url) .git)
   gitowner=$(echo "$source" | gawk -F "/" '{ print ( $(NF-1) ) }' | gawk -F ":" '{ print ( $(NF) ) }')
   #release=$(($(git rev-list HEAD --count)))
   release=$(git log | grep "^commit" | wc -l)
@@ -246,7 +246,7 @@ while true; do
   echo;
   case $yn in
     [Yy]* )
-      
+
     break;;
     [Nn]* ) exit;;
     * ) echo "Please respond with [y]es or [n]o.";;
@@ -276,7 +276,7 @@ fi
 if [ -f autogen.sh ] && [ -f configure ]
 then
   exec < /dev/tty
-  
+
   while true; do
     read -n 1 -p "\"autogen.sh\" and \"configure\" found. Should I also run \"configure\"? [y/n]: " yn
     echo;
@@ -336,7 +336,7 @@ fi
 if [ -f "debian/changelog" ]
 then
   echog "Search for information via ${bold}debian/changelog${TOA}"
-  
+
   versionDebianChangelog=$(head -1 "debian/changelog" | gawk -F " " '{print $2}' |  tr -d "()")
   logVersion "$versionDebianChangelog"
   if [ "$version" == "" ]; then version=$versionDebianChangelog; fi
@@ -348,23 +348,23 @@ fi
 if [ -f "debian/control" ]
 then
   echog "Search for information via ${bold}debian/control${TOA}"
-  
+
   architectureDebianControl=$(grep '^ *Architecture *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " ")
   logArchitecture "$architectureDebianControl"
   if [ "$architecture" == "" ]; then architecture=$architectureDebianControl; fi
-  
+
   requiresDebianControl=$(grep '^ *Depends *' "debian/control" | gawk -F ":" '{print $2}' |  tr -d " ")
   logRequires "$requiresDebianControl"
   if [ "$requires" == "" ]; then requires=$requiresDebianControl; fi
-  
+
   maintainerDebianControl=$(grep '^ *Maintainer *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
   logMaintainer "$maintainerDebianControl"
   if [ "$maintainer" == "" ]; then maintainer=$maintainerDebianControl; fi
-  
+
   groupDebianControl=$(grep '^ *Section *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
   logGroup "$groupDebianControl"
   if [ "$group" == "" ]; then group=$groupDebianControl; fi
-  
+
   summaryDebianControl=$(grep '^ *Description *' "debian/control" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
   logSummary "$summaryDebianControl"
   if [ "$summary" == "" ]
@@ -380,7 +380,7 @@ fi
 if [ -f "Makefile" ]
 then
   echog "Search for information via ${bold}Makefile${TOA}"
-  
+
   versionMakefile=$(grep '^ *PACKAGE_VERSION *= *' Makefile | gawk -F "=" '{print $2}' |  tr -d " ")
   logVersion "$versionMakefile"
   if [ "$version" == "" ]; then version=$versionMakefile; fi
@@ -392,7 +392,7 @@ fi
 if [ -f "$name.doap" ]
 then
   echog "Search for information via ${bold}$name.doap${TOA}"
-  
+
   lengthMaintainerDoap=$(xpath -q -e "count(//maintainer)" "$name.doap" 2>/dev/null)
   for ((i = 1; i <= $lengthMaintainerDoap; i++)); do
     if [ "$maintainerDoap" == "" ]
@@ -405,7 +405,7 @@ then
   done
   logMaintainer "$maintainerDoap"
   if [ "$maintainer" == "" ]; then maintainer=$maintainerDoap; fi
-  
+
   summaryDoap=$(xpath -q -e "*/shortdesc/text()" "$name.doap" | tr -d '\n')
   logSummary "$summaryDoap"
   if [ "$summary" == "" ]
@@ -421,15 +421,15 @@ fi
 if [ -f "$name.spec" ]
 then
   echog "Search for information via ${bold}$name.spec${TOA}"
-  
+
   licenseSpec=$(grep '^ *License *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " ")
   logLicense "$licenseSpec"
   if [ "$license" == "" ]; then license=$licenseSpec; fi
-  
+
   groupSpec=$(grep '^ *Group *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " ")
   logGroup "$groupSpec"
   if [ "$group" == "" ]; then group=$groupSpec; fi
-  
+
   summarySpec=$(grep '^ *Summary *' "$name.spec" | gawk -F ":" '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
   logSummary "$summarySpec"
   if [ "$summary" == "" ]
@@ -437,7 +437,7 @@ then
     summary=$summarySpec
     writeDescriptionPak "$summarySpec"
   fi
-  
+
   requiresSpec=$(grep '^ *Requires *' "$name.spec" | gawk -F ":" '{print $2}' |  tr -d " " | tr '\n' ',' | sed -e 's/^,*//' -e 's/,*$//')
   logRequires "$requiresSpec"
   if [ "$requires" == "" ]; then requires=$requiresSpec; fi
@@ -454,23 +454,23 @@ then
     exit 1
   else
     echog "Search for information via ${bold}setup.py${TOA}"
-    
+
     maintainerSetupPy="$(./setup.py --author) ($(./setup.py --author-email))"
     logMaintainer "$maintainerSetupPy"
     if [ "$maintainer" == "" ]; then maintainer=$maintainerSetupPy; fi
-    
+
     versionSetupPy=$(./setup.py --version)
     logVersion "$versionSetupPy"
     if [ "$version" == "" ]; then version=$versionSetupPy; fi
-    
+
     licenseSetupPy=$(./setup.py --license)
     logLicense "$licenseSetupPy"
     if [ "$license" == "" ]; then license=$licenseSetupPy; fi
-    
+
     requiresSetupPy=$(./setup.py --requires)
     logRequires "$requiresSetupPy"
     if [ "$requires" == "" ]; then requires=$requiresSetupPy; fi
-    
+
     summarySetupPy=$(./setup.py --description)
     logSummary "$summarySetupPy"
     if [ "$summary" == "" ]
@@ -487,7 +487,7 @@ fi
 if [ "$isGitHub" == "true" ]
 then
   echog "Search for information via ${bold}GitHub-API${TOA}"
-  
+
   summaryGitHubApi=$(echo "$responseGitHub" | jshon -e "items" -e 0 -e "description" | sed -e 's/^"*//' -e 's/"*$//' | tr -d "\\\\")
   logSummary "$summaryGitHubApi"
   if [ "$summary" == "" ]
@@ -538,6 +538,10 @@ if [ "$name" == "" ]
 then
   name=$projectBasename
 fi
+if [ "$name" == "" ]
+then
+  name=$(basename $(git config --get remote.$(git config --get branch.master.remote).url) .git)
+fi
 
 requires=$(echo "$requires" | tr ',' '\n' | sed 's/\([<<>>==].*\)/(\1)/' | sed -e $'s/((/(/g' | sed -e $'s/))/)/g')
 requires=$(echo "$requires" | tr '\n' ',' | sed -e 's/^,*//' -e 's/,*$//')
@@ -554,6 +558,3 @@ else
 fi
 
 exit 0
-
-
-
