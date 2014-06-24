@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# A post-merge git hook for 
+# https://github.com/atom/atom
+#
+# ln -s  [your_source_folder]/githooks/post-merge/post-merge_4_atom [your_source_folder]/atom/.git/hooks/post-merge
+#
 
 green="\e[0;32m"
 TOA="\e[0m" # Turn off character attributes
