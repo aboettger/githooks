@@ -306,6 +306,30 @@ fi
 
 if [ -f "Makefile" ]
 then
+  optionRule=-1
+  while [ $optionRule -ne 0 ]
+  do
+    makeRules=$(grep '^[a-z].*:' Makefile | cut -d: -f1)
+    ruleCount=0
+    echog "[$ruleCount] continue with \"make\""
+    for rule in $makeRules
+    do
+      ruleCount=$((ruleCount+1))
+      if [ "$rule" == "install" ]
+      then
+        echogn "[$ruleCount] make $rule"
+        echog " ${yellow}(this is a bad idea)${TOA}"
+      else
+        echog "[$ruleCount] make $rule"
+      fi
+    done
+    read optionRule
+    selectedRule=$(echo "$makeRules" | awk NR=="$optionRule")
+
+    logInfo "Starting make $selectedRule"
+    make "$selectedRule"
+  done
+
   logInfo "Starting make"
   if [ "$makeParam" == "" ]
   then
