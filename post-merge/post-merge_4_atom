@@ -20,10 +20,10 @@ done
 cd ~/src/atom
 
 echo -e "${green}compile${TOA}"
-#script/build
+script/build
 
 echo -e "${green}build debian packge${TOA}"
-#script/grunt mkdeb
+script/grunt mkdeb
 
 echo -e "${green}ls -la /tmp/atom-build${TOA}"
 ls -la /tmp/atom-build
