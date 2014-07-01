@@ -1,13 +1,81 @@
 #!/bin/bash
 #
-# A post-merge git hook for 
+# A post-merge git hook for
 # https://github.com/atom/atom
 #
 # ln -s  [your_source_folder]/githooks/post-merge/post-merge_4_atom [your_source_folder]/atom/.git/hooks/post-merge
 #
 
+# Trap the INT signal (ctrl-c, for example)
+trap trapint 2
+
+packageConfig="package.json"
+
 green="\e[0;32m"
+red="\e[0;31m"
 TOA="\e[0m" # Turn off character attributes
+
+# Prints OK or FAILED! depending on previous command return value
+function okfail () {
+  if [ $? -gt 0 ]; then
+    logError "There was an error. Aborting."
+    return 1
+  else
+    logInfo "OK"
+    return 0
+  fi
+}
+
+function trapint {
+  echo
+  echo
+  echo "$(basename "$0") SIGINT received"
+  cleanup
+}
+
+function cleanup {
+  echo "Cleaning up..."
+  removeRelease
+  echo "Bye."
+  echo
+  exit 1
+}
+
+function logInfo () {
+  echo -e "${green}$1${TOA}"
+}
+
+function logError () {
+  echo -e "${red}$1${TOA}"
+}
+
+function addRelease () {
+  version=$(jshon -e 'version' < "package.json"  | tr -d "\"" | tr -d "\\\\")
+  release=$(git log | grep -c "^commit")
+  logInfo "Version: $version"
+  logInfo "Release: $release"
+
+  newVersion="$version-$release"
+
+  if [ -f "$packageConfig" ]; then
+    logInfo "Create backup file $packageConfig.bak"
+    cp "$packageConfig" "$packageConfig.bak"
+    okfail; [ $? -gt 0 ] && cleanup
+    if [ -f "$packageConfig.bak" ]; then
+      logInfo "Update $packageConfig with $newVersion"
+      sed -i "s/\"version\" *: *\"$version\"/\"version\": \"$newVersion\"/g" "$packageConfig"
+      okfail; [ $? -gt 0 ] && cleanup
+    fi
+  fi
+}
+
+function removeRelease () {
+  if [ -f "$packageConfig.bak" ]; then
+    logInfo "Restore file $packageConfig"
+    mv "$packageConfig.bak" "$packageConfig"
+    okfail
+  fi
+}
 
 exec < /dev/tty
 
@@ -25,13 +93,19 @@ done
 
 cd ~/src/atom
 
+addRelease
+
 echo -e "${green}compile${TOA}"
 script/build
 
 echo -e "${green}build debian packge${TOA}"
 script/grunt mkdeb
 
-echo -e "${green}ls -la /tmp/atom-build${TOA}"
+echo -e "${green}You can find the deb package: \"/tmp/atom-build\"${TOA}"
 ls -la /tmp/atom-build
+
+echo -e "${green}Please install with \"sudo dpkg -i /tmp/atom-build/[deb-package]\"${TOA}"
+
+removeRelease
 
 exit 0
