@@ -21,7 +21,7 @@ postmergerc:
 
 post-merge_4_atom
 -----------------
-Automatic creation of a deb package for atom (https://github.com/atom)
+Automatic creation of a deb package for atom (https://github.com/atom).
 To use the scripts provided here in the githooks/post-merge it makes the most sense to work with symbolic links.
 
 ```ln -s  [githooks-checkout-path]/post-merge/post-merge_4_atom [path-to-git-project-atom]/.git/hooks/post-merge```
