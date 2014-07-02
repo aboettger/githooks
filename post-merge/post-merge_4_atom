@@ -101,11 +101,11 @@ script/build
 echo -e "${green}build debian packge${TOA}"
 script/grunt mkdeb
 
-echo -e "${green}You can find the deb package: \"/tmp/atom-build\"${TOA}"
+removeRelease
+
+echo -e "${green}You can find the deb package here: \"/tmp/atom-build\"${TOA}"
 ls -la /tmp/atom-build
 
 echo -e "${green}Please install with \"sudo dpkg -i /tmp/atom-build/[deb-package]\"${TOA}"
-
-removeRelease
 
 exit 0
