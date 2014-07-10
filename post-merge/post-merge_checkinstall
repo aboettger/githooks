@@ -581,11 +581,11 @@ if [ -f "setup.py" ]
 then
   echo
   echog "Install with ${green}checkinstall ... python setup.py install${TOA}"
-  sudo checkinstall --spec foo --maintainer \""$maintainer"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" "$checkinstallParam" python setup.py install
+  sudo checkinstall --spec foo --maintainer \""$maintainer"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $(if [ "$checkinstallParam" != "" ]; then echo "$checkinstallParam"; fi) python setup.py install
 else
   echo
   echog "Install with ${green}checkinstall ...${TOA}"
-  sudo checkinstall --spec foo --maintainer \""$maintainer"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\"
+  sudo checkinstall --spec foo --maintainer \""$maintainer"\" --pkglicense \""$license"\" --pkgname \""$name"\" --pkgrelease \""$release"\" --pkgversion \""$version"\" --pkgsource \""$sourceHtmlUrl"\" --pkggroup \""$group"\" --requires \""$requires"\" --pkgarch \""$architecture"\" $(if [ "$checkinstallParam" != "" ]; then echo "$checkinstallParam"; fi)
 fi
 
 exit 0
